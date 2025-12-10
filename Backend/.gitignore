@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Secrets (NEVER UPLOAD THESE)
+.env
+serviceAccountKey.json.json
+
+# Logs
+npm-debug.log

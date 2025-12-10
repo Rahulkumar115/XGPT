@@ -1,0 +1,24 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import chatRoutes from "./routes/chatRoutes.js"; // Import the routes
+
+// 1. Load Environment Variables
+dotenv.config();
+
+const app = express();
+const PORT = 5000;
+
+// 2. Middleware
+app.use(cors());
+app.use(express.json());
+
+// 3. Use Routes
+// This adds "/api" to all routes in chatRoutes.js
+// So: "/chat" becomes "/api/chat"
+app.use("/api", chatRoutes);
+
+// 4. Start Server
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on http://localhost:${PORT}`);
+});
