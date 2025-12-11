@@ -4,10 +4,13 @@ import { db } from "../firebase.js";
 import dotenv from "dotenv";
 
 dotenv.config({ path: "./.env" });
-
 const router = express.Router();
 
-// 1. GET ALL THREADS (For the Sidebar)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// ==========================================
+// 1. GET ALL THREADS (For Sidebar History)
+// ==========================================
 router.get("/threads/:userId", async (req, res) => {
   try {
     const snapshot = await db.collection("users").doc(req.params.userId).collection("threads")
@@ -20,7 +23,9 @@ router.get("/threads/:userId", async (req, res) => {
   }
 });
 
-// 2. GET MESSAGES FOR A SPECIFIC THREAD (When clicking a sidebar item)
+// ==========================================
+// 2. GET MESSAGES FOR A THREAD (When clicked)
+// ==========================================
 router.get("/thread/:userId/:threadId", async (req, res) => {
   try {
     const { userId, threadId } = req.params;
@@ -35,46 +40,95 @@ router.get("/thread/:userId/:threadId", async (req, res) => {
   }
 });
 
-// 3. SEND MESSAGE (Handles both New & Existing Threads)
+// ==========================================
+// 3. SEND MESSAGE (Text + Image + Pro Check)
+// ==========================================
 router.post("/chat", async (req, res) => {
   try {
-    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "API Key Missing" });
-
-    const { message, userId, threadId } = req.body;
+    const { message, userId, image, threadId } = req.body;
     let currentThreadId = threadId;
 
-    // A. AI GENERATION
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(message);
-    const replyText = result.response.text();
+    // --- A. SUBSCRIPTION & LIMIT CHECK ---
+    if (userId) {
+      const userRef = db.collection("users").doc(userId);
+      const userDoc = await userRef.get();
+      
+      if (!userDoc.exists) {
+        await userRef.set({ plan: "free", messageCount: 1 }, { merge: true });
+      } else {
+        const userData = userDoc.data();
 
-    // B. DATABASE LOGIC
+        // 🔒 LOCK: Image is Pro Only
+        if (image && userData.plan !== "pro") {
+          return res.status(403).json({ reply: "🔒 Image Analysis is a Pro Feature. Please Upgrade!" });
+        }
+
+        // Check Free Limit (Text)
+        if (userData.plan === "free" && userData.messageCount >= 10) {
+          return res.status(403).json({ reply: "🛑 Daily limit reached. Upgrade to Pro!" });
+        }
+
+        // Increment Count
+        await userRef.update({ messageCount: (userData.messageCount || 0) + 1 });
+      }
+    }
+
+    // --- B. AI GENERATION ---
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    let result;
+
+    if (image) {
+      // 📸 VISION MODE
+      const imagePart = {
+        inlineData: {
+          data: image.split(",")[1], // Remove 'data:image/png;base64,'
+          mimeType: "image/png", 
+        },
+      };
+      result = await model.generateContent([message, imagePart]);
+    } else {
+      // 💬 TEXT MODE
+      result = await model.generateContent(message);
+    }
+
+    const response = await result.response;
+    const replyText = response.text();
+
+    // --- C. SAVE TO DATABASE (Thread Logic) ---
     if (userId) {
       const userRef = db.collection("users").doc(userId);
 
-      // If NO threadId is provided, create a NEW Thread first
+      // If New Chat -> Create Thread First
       if (!currentThreadId) {
         const newThreadRef = await userRef.collection("threads").add({
-          title: message.substring(0, 30) + "...", // Title is first 30 chars
+          title: message.substring(0, 30) + "...", 
           createdAt: new Date().toISOString()
         });
         currentThreadId = newThreadRef.id;
       }
 
-      // Save Message to the specific thread
-      const threadRef = userRef.collection("threads").doc(currentThreadId);
-      const messagesRef = threadRef.collection("messages");
+      // Save Message to Thread
+      const messagesRef = userRef.collection("threads").doc(currentThreadId).collection("messages");
 
-      await messagesRef.add({ role: "user", content: message, timestamp: new Date().toISOString() });
-      await messagesRef.add({ role: "assistant", content: replyText, timestamp: new Date().toISOString() });
+      await messagesRef.add({ 
+        role: "user", 
+        content: message, 
+        image: image || null, // Save image if exists
+        timestamp: new Date().toISOString() 
+      });
+      
+      await messagesRef.add({ 
+        role: "assistant", 
+        content: replyText, 
+        timestamp: new Date().toISOString() 
+      });
     }
 
-    // Return the reply AND the threadId (so frontend knows which thread we are in)
+    // Return Reply AND ThreadId (so frontend updates URL/Sidebar)
     res.json({ reply: replyText, threadId: currentThreadId });
 
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error("AI Error:", error);
     res.status(500).json({ error: "Server Error" });
   }
 });

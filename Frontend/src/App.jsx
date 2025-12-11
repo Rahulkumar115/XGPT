@@ -89,10 +89,12 @@ function App() {
   };
 
   // 5. SEND MESSAGE LOGIC
-  const sendMessage = async () => {
-    if (!input) return;
+    // B. Optimistic Update
+    // Updated sendMessage to accept 'image' argument
+  const sendMessage = async (image = null) => {
+    if (!input && !image) return;
 
-    // A. Check Free Plan Limit
+    // 1. FREE USER CHECK (Existing logic)
     if (user && userData) {
       if (userData.plan === "free" && userData.messageCount >= 10) {
         alert("Daily limit reached! Please Upgrade to Pro.");
@@ -100,36 +102,43 @@ function App() {
       }
     }
 
-    // B. Optimistic Update
-    const newMessages = [...messages, { role: "user", content: input }];
+    // 2. OPTIMISTIC UI UPDATE
+    // Add the user's message to the screen immediately
+    const newMessages = [...messages, { role: "user", content: input, image: image }];
     setMessages(newMessages);
+    
     const currentInput = input;
-    setInput("");
+    setInput(""); // Clear input box
     setLoading(true);
 
     try {
-      // C. Call Backend
+      // 3. SEND TO BACKEND
       const res = await axios.post("http://localhost:5000/api/chat", {
-        message: currentInput,
+        message: currentInput || "Describe this image", // If sending only image, add default text
+        image: image, // 👈 SENDING IMAGE
         userId: user ? user.uid : null,
         threadId: currentThreadId
       });
 
-      // D. Update Messages & Count
+      // 4. ADD AI REPLY
       setMessages([...newMessages, { role: "assistant", content: res.data.reply }]);
 
+      // Update Local Count
       if (userData) {
         setUserData({ ...userData, messageCount: (userData.messageCount || 0) + 1 });
       }
 
-      // E. If New Chat -> Set Thread ID & Refresh Sidebar
+      // New Chat Logic
       if (!currentThreadId) {
         setCurrentThreadId(res.data.threadId);
         refreshThreadList(user.uid);
       }
 
     } catch (error) {
-      setMessages([...newMessages, { role: "assistant", content: "⚠️ Error connecting to server." }]);
+      // 5. HANDLE "PRO ONLY" ERROR
+      // If backend says "403 Forbidden" (Image is Pro only), show it in chat bubble
+      const errorMsg = error.response?.data?.reply || "⚠️ Error connecting to server.";
+      setMessages([...newMessages, { role: "assistant", content: errorMsg }]);
     }
     setLoading(false);
   };
@@ -168,6 +177,7 @@ function App() {
         setInput={setInput} 
         sendMessage={sendMessage} 
         loading={loading}
+        isPro={userData?.plan === "pro"}
       />
     </div>
   );

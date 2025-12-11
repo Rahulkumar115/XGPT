@@ -86,10 +86,20 @@ function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, active
         </div>
       )}
 
-      {/* User Profile */}
+      {/* User Profile Section */}
       <div className="sidebar-bottom">
-        <img src={user.photoURL} alt="User" className="user-avatar" />
-        <span className="user-name">{user.displayName}</span>
+        <img 
+          // 👇 FIX: If photoURL is missing, use UI Avatars to generate one from the email
+          src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=random&color=fff&bold=true`} 
+          alt="User" 
+          className="user-avatar" 
+        />
+        
+        {/* 👇 FIX: If displayName is missing, show the email username instead */}
+        <span className="user-name">
+          {user.displayName || user.email.split("@")[0]}
+        </span>
+        
         <button onClick={onLogout} className="logout-btn">Logout</button>
       </div>
     </div>

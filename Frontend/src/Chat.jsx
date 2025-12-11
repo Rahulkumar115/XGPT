@@ -1,18 +1,78 @@
-// src/Chat.jsx
+import React, { useState } from "react";
 import "./Chat.css";
 
-function Chat({ message }) {
-  const isAI = message.role === "assistant";
+function Chat({ message, isPro }) { // 👈 Receive 'isPro' prop
+  const [speaking, setSpeaking] = useState(false);
+
+  // Function to handle Text-to-Speech
+  const handleSpeak = () => {
+    // 1. Check if user is Pro
+    if (!isPro) {
+      alert("🔒 Voice Mode is a Pro feature. Please Upgrade!");
+      return;
+    }
+
+    // 2. If already speaking, stop it
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+
+    // 3. Start Speaking
+    const utterance = new SpeechSynthesisUtterance(message.content);
+    utterance.lang = "en-US"; // Set language
+    utterance.rate = 1; // Normal speed
+    utterance.pitch = 1; // Normal pitch
+
+    // Try to find a better voice (optional)
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Microsoft Zira"));
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onend = () => setSpeaking(false); // Reset icon when done
+
+    setSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
 
   return (
-    <div className={`chat-row ${isAI ? "ai-row" : "user-row"}`}>
+    <div className={`chat-bubble ${message.role}`}>
+      {/* 1. Avatar */}
+      <div className="chat-avatar">
+        {message.role === "user" ? "👤" : "🤖"}
+      </div>
+
+      {/* 2. Message Content */}
       <div className="chat-content">
-        <div className={`avatar ${isAI ? "ai-avatar" : "user-avatar-icon"}`}>
-          {isAI ? "🤖" : "👤"}
-        </div>
-        <div className="message-text">
-          {message.content}
-        </div>
+        {/* If image exists, show it */}
+        {message.image && (
+          <img 
+            src={message.image} 
+            alt="Uploaded" 
+            style={{ maxWidth: "200px", borderRadius: "10px", marginBottom: "10px" }} 
+          />
+        )}
+        
+        <p>{message.content}</p>
+
+        {/* 3. 🔊 Speaker Icon (Only for AI messages) */}
+        {message.role === "assistant" && (
+          <button 
+            onClick={handleSpeak}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              marginTop: "5px",
+              fontSize: "16px",
+              opacity: 0.7
+            }}
+            title={isPro ? "Read Aloud" : "Upgrade to unlock Voice"}
+          >
+            {speaking ? "⏹️" : "🔊"} 
+          </button>
+        )}
       </div>
     </div>
   );
