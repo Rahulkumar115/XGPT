@@ -1,3 +1,4 @@
+import paymentRoutes from "./routes/paymentRoutes.js";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -17,6 +18,7 @@ app.use(express.json());
 // This adds "/api" to all routes in chatRoutes.js
 // So: "/chat" becomes "/api/chat"
 app.use("/api", chatRoutes);
+app.use("/api", paymentRoutes);
 
 // 4. Start Server
 app.listen(PORT, () => {
