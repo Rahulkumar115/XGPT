@@ -1,23 +1,21 @@
 import axios from "axios";
 import "./Sidebar.css";
 
-function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, activeThreadId, isFree }) {
+// ✅ 1. Accept 'isOpen' and 'closeSidebar' props
+function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, activeThreadId, isFree, isOpen, closeSidebar }) {
 
     const handlePayment = async () => {
     try {
-      // A. Create Order
       const { data: order } = await axios.post("http://localhost:5000/api/create-order");
 
-      // B. Razorpay Options
       const options = {
-        key: "rzp_test_RqBpTs0iYonPRv", // 🔴 PASTE YOUR KEY ID HERE
+        key: "rzp_test_RqBpTs0iYonPRv", 
         amount: order.amount,
         currency: order.currency,
         name: "ChatGPT Clone Pro",
         description: "Test Transaction",
         order_id: order.id,
         handler: async function (response) {
-          // C. Verify on Backend
           const verifyRes = await axios.post("http://localhost:5000/api/verify-payment", {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -27,7 +25,7 @@ function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, active
 
           if (verifyRes.data.success) {
             alert("Upgrade Successful! Refreshing...");
-            window.location.reload(); // Reloads page to remove the button
+            window.location.reload(); 
           }
         },
         prefill: {
@@ -47,7 +45,21 @@ function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, active
   };
 
   return (
-    <div className="sidebar">
+    // ✅ 2. Add 'open' class dynamically based on prop
+    <div className={`sidebar ${isOpen ? "open" : ""}`}>
+      
+      {/* ✅ 3. Close Button (Visible only on mobile via CSS hacks) */}
+      <button 
+        onClick={closeSidebar}
+        className="mobile-close-btn"
+        style={{ 
+            display: "none", 
+            position: "absolute", right: "10px", top: "10px", 
+            background: "transparent", border: "none", color: "white", fontSize: "20px", cursor: "pointer" 
+        }}
+      >✕</button>
+      <style>{`@media(max-width:768px){ .mobile-close-btn{ display:block!important; } }`}</style>
+
       {/* Top Section */}
       <div className="sidebar-top">
         <button className="new-chat-btn" onClick={onNewChat}>
@@ -70,11 +82,11 @@ function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, active
         ))}
       </div>
 
-      {/* 👇 RESTORED: Upgrade Button */}
+      {/* Upgrade Button */}
      {isFree && (
         <div style={{ padding: "10px", borderTop: "1px solid #444", marginBottom: "10px" }}>
           <button 
-            onClick={handlePayment} // 👈 ATTACH THE FUNCTION HERE
+            onClick={handlePayment} 
             style={{ 
               width: "100%", padding: "10px", 
               background: "linear-gradient(90deg, #f093fb 0%, #f5576c 100%)", 
@@ -89,13 +101,11 @@ function Sidebar({ user, onLogout, threadList, onSelectThread, onNewChat, active
       {/* User Profile Section */}
       <div className="sidebar-bottom">
         <img 
-          // 👇 FIX: If photoURL is missing, use UI Avatars to generate one from the email
           src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=random&color=fff&bold=true`} 
           alt="User" 
           className="user-avatar" 
         />
         
-        {/* 👇 FIX: If displayName is missing, show the email username instead */}
         <span className="user-name">
           {user.displayName || user.email.split("@")[0]}
         </span>

@@ -12,7 +12,8 @@ const PORT = 5000;
 
 // 2. Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb"}));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // 3. Use Routes
 // This adds "/api" to all routes in chatRoutes.js

@@ -6,7 +6,7 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber 
 } from "firebase/auth";
-import "./Login.css"; // Import the design file
+import "./Login.css";
 
 function Login({ onLogin }) {
   const [view, setView] = useState("email"); // 'email' or 'phone'
@@ -50,7 +50,7 @@ function Login({ onLogin }) {
   // 3. Phone Login
   const sendOtp = async () => {
     if (!phone || phone.length < 4) {
-      setError("Please enter a valid phone number (e.g., +1 555...)");
+      setError("Please enter a valid phone number (e.g., +91 9999...)");
       return;
     }
     try {
@@ -63,7 +63,7 @@ function Login({ onLogin }) {
       setError(""); 
     } catch (err) {
       console.error(err);
-      setError("Failed to send OTP. Check the number format (+CountryCode).");
+      setError("Failed to send OTP. Check the number format.");
     }
   };
 
@@ -77,70 +77,92 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h1 className="login-title">Welcome Back</h1>
+    <div className="login-page"> {/* 🔴 New Wrapper */}
+      <div className="login-card"> {/* 🔴 New Card Class */}
+        
+        <h2>Welcome Back</h2>
 
         {/* Tabs */}
         <div className="login-tabs">
-          <span className={`tab ${view === "email" ? "active" : ""}`} onClick={() => setView("email")}>Email</span>
-          <span className={`tab ${view === "phone" ? "active" : ""}`} onClick={() => setView("phone")}>Mobile</span>
+          <span 
+            className={`tab ${view === "email" ? "active" : ""}`} 
+            onClick={() => setView("email")}
+          >
+            Email
+          </span>
+          <span 
+            className={`tab ${view === "phone" ? "active" : ""}`} 
+            onClick={() => setView("phone")}
+          >
+            Mobile
+          </span>
         </div>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <div style={{color: "#ff4d4d", marginBottom: "15px", fontSize: "14px"}}>{error}</div>}
 
         {/* --- EMAIL FORM --- */}
         {view === "email" && (
-          <form onSubmit={handleEmailAuth} className="login-form">
+          <form onSubmit={handleEmailAuth}>
             <input 
-              type="email" className="login-input" placeholder="Email address"
-              value={email} onChange={(e) => setEmail(e.target.value)} required
+              type="email" 
+              placeholder="Email address"
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required
             />
             <input 
-              type="password" className="login-input" placeholder="Password"
-              value={password} onChange={(e) => setPassword(e.target.value)} required
+              type="password" 
+              placeholder="Password"
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required
             />
-            <button type="submit" className="login-btn btn-primary">
+            <button type="submit" className="login-btn">
               {isRegistering ? "Sign Up" : "Log In"}
             </button>
-            <div className="toggle-text">
-              {isRegistering ? "Already have an account?" : "Don't have an account?"}
-              <span className="toggle-link" onClick={() => setIsRegistering(!isRegistering)}>
+            
+            <p className="toggle-text">
+              {isRegistering ? "Already have an account?" : "Don't have an account?"}{" "}
+              <span onClick={() => setIsRegistering(!isRegistering)}>
                 {isRegistering ? "Log In" : "Sign Up"}
               </span>
-            </div>
+            </p>
           </form>
         )}
 
         {/* --- PHONE FORM --- */}
         {view === "phone" && (
-          <div className="login-form">
+          <div>
             {!otpSent ? (
               <>
                 <input 
-                  type="tel" className="login-input" placeholder="Phone number"
-                  value={phone} onChange={(e) => setPhone(e.target.value)}
+                  type="tel" 
+                  placeholder="Phone number (+91...)"
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)}
                 />
                 <div id="recaptcha-container"></div>
-                <button onClick={sendOtp} className="login-btn btn-primary">Send OTP</button>
+                <button onClick={sendOtp} className="login-btn">Send OTP</button>
               </>
             ) : (
               <>
                 <input 
-                  type="text" className="login-input" placeholder="Enter 6-digit Code"
-                  value={otp} onChange={(e) => setOtp(e.target.value)}
+                  type="text" 
+                  placeholder="Enter 6-digit Code"
+                  value={otp} 
+                  onChange={(e) => setOtp(e.target.value)}
                 />
-                <button onClick={verifyOtp} className="login-btn btn-primary">Verify & Login</button>
+                <button onClick={verifyOtp} className="login-btn">Verify & Login</button>
               </>
             )}
           </div>
         )}
 
         {/* Divider */}
-        <div className="divider">OR</div>
+        <div style={{margin: "20px 0", color: "#555"}}>OR</div>
 
         {/* Google Button */}
-        <button onClick={handleGoogle} className="login-btn btn-google">
+        <button onClick={handleGoogle} className="google-btn">
           Continue with Google
         </button>
 

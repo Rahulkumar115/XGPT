@@ -45,5 +45,5 @@
 
 .user-avatar { width: 30px; height: 30px; border-radius: 3px; }
 .user-name { font-size: 14px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-.logout-btn { background: none; border: none; color: #8e8ea0; cursor: pointer; font-size: 12px;}
+.logout-btn { background: none; border: none; color: #f13704; cursor: pointer; font-size: 12px;}
 .logout-btn:hover { color: white; }
