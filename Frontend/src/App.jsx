@@ -197,13 +197,15 @@ function App() {
         onClick={() => setIsSidebarOpen(false)}
       ></div>
 
-      {/* Hamburger Button */}
-      <button 
-        className="mobile-menu-btn" 
-        onClick={() => setIsSidebarOpen(true)}
-      >
-         ☰
-      </button>
+      {/* Hamburger Button - Only show when Sidebar is CLOSED */}
+      {!isSidebarOpen && (
+        <button 
+          className="mobile-menu-btn" 
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          ☰
+        </button>
+      )}
 
       {/* Sidebar */}
       <Sidebar 

@@ -5,6 +5,9 @@
   flex-direction: column;
   padding: 10px;
   border-right: 1px solid #4d4d4f;
+  height: 100vh; 
+  height: 100dvh; 
+  box-sizing: border-box;
 }
 
 .new-chat-btn {
@@ -35,6 +38,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-top: auto; 
+  padding-bottom: 20px; 
+  background-color: #202123; 
 }
 
 .active-thread {
@@ -46,3 +52,20 @@
 .user-name { font-size: 14px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .logout-btn { background: none; border: none; color: #f13704; cursor: pointer; font-size: 12px;}
 .logout-btn:hover { color: white; }
+
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px; 
+    width: 280px; 
+    z-index: 1000;
+    transition: left 0.3s ease-in-out; 
+  }
+  
+  .sidebar.open {
+    left: 0; 
+    box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+  }
+}
