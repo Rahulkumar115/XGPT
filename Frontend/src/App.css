@@ -32,22 +32,29 @@
 
 
 .mobile-menu-btn {
-  display: none;
-  position: absolute;
+  display: none; 
+  
+  
+  position: fixed;        
   top: 15px;
   left: 15px;
-  background: transparent;
-  border: none;
+  z-index: 10000;         
+  
+  /* Make it visible! */
+  background-color: rgba(52, 53, 65, 0.9); 
   color: white;
+  border: 1px solid #565869; 
+  border-radius: 5px;
+  padding: 5px 10px;       
   font-size: 24px;
   cursor: pointer;
-  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
 }
 
 @media (max-width: 768px) {
   
   /* Show Menu Button */
-  .mobile-menu-btn { display: block; }
+  .mobile-menu-btn { display: block !important; }
 
   .sidebar {
     position: fixed;
