@@ -59,7 +59,7 @@ function App() {
 
   const refreshThreadList = async (userId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/threads/${userId}`);
+      const res = await axios.get(`https://xgpt-backend.onrender.com/api/threads/${userId}`);
       setThreadList(res.data);
     } catch (err) { console.error(err); }
   };
@@ -70,7 +70,7 @@ function App() {
     setLoading(true);
     setIsSidebarOpen(false);
     try {
-      const res = await axios.get(`http://localhost:5000/api/thread/${user.uid}/${threadId}`);
+      const res = await axios.get(`https://xgpt-backend.onrender.com/api/thread/${user.uid}/${threadId}`);
       setMessages(res.data);
     } catch (err) { console.error(err); }
     setLoading(false);
@@ -121,7 +121,7 @@ function App() {
     setMessages(newMessages);
 
     try {
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const response = await fetch("https://xgpt-backend.onrender.com/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
