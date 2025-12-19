@@ -1,26 +1,20 @@
-/* Login Page Background - Centering Wrapper */
 .login-page {
   height: 100vh;
   width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #0f0f10; /* Dark background */
-  padding: 20px; /* 🔴 Keeps space around the card on mobile */
+  background-color: #0f0f10; 
+  padding: 20px; 
   box-sizing: border-box;
 }
 
-/* 🚀 THE CARD EFFECT (Mobile & Desktop) */
 .login-card {
   background: #1c1c23;
   padding: 40px 30px;
-  border-radius: 20px; /* Keeps rounded corners */
-  
-  /* 🔴 Responsive Width Logic */
+  border-radius: 20px; 
   width: 100%; 
-  max-width: 400px; /* Limits size on Desktop */
-  
-  /* The "Lift" Effect */
+  max-width: 400px; 
   box-shadow: 
     0 10px 40px rgba(0, 0, 0, 0.6), 
     0 0 50px rgba(0, 255, 127, 0.05);
@@ -28,8 +22,6 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
   color: white;
-  
-  /* Float Animation */
   animation: floatUp 0.6s ease-out;
   position: relative;
   z-index: 10;
@@ -113,10 +105,6 @@
   text-decoration: underline;
 }
 
-/* ... (Your existing Login.css code) ... */
-
-/* 👇 ADD THIS AT THE BOTTOM FOR THE TABS */
-
 .login-tabs {
   display: flex;
   justify-content: center;
@@ -140,14 +128,28 @@
 }
 
 .tab.active {
-  color: #10a37f; /* ChatGPT Green */
+  color: #10a37f; 
   border-bottom: 2px solid #10a37f;
 }
 
-/* 📱 MOBILE SPECIFIC TWEAKS */
 @media (max-width: 480px) {
   .login-card {
-    padding: 30px 20px; /* Slightly tighter padding on small phones */
-    width: 90%; /* Forces gaps on sides if padding fails */
+    padding: 30px 20px; 
+    width: 90%; 
   }
+}
+
+
+.login-modal-content .login-page {
+  height: auto !important;       
+  width: 100% !important;        
+  background: transparent !important; 
+  position: static !important;   
+  padding: 0 !important;         
+}
+
+.login-modal-content .login-card {
+  margin: 0 auto;                
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+  animation: none;               
 }

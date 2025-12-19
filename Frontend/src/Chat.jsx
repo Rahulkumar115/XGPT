@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import "./Chat.css";
 
-function Chat({ message, isPro }) { // 👈 Receive 'isPro' prop
+function Chat({ message, isPro }) { 
   const [speaking, setSpeaking] = useState(false);
 
-  // Function to handle Text-to-Speech
   const handleSpeak = () => {
     // 1. Check if user is Pro
     if (!isPro) {
@@ -21,16 +20,15 @@ function Chat({ message, isPro }) { // 👈 Receive 'isPro' prop
 
     // 3. Start Speaking
     const utterance = new SpeechSynthesisUtterance(message.content);
-    utterance.lang = "en-US"; // Set language
-    utterance.rate = 1; // Normal speed
-    utterance.pitch = 1; // Normal pitch
+    utterance.lang = "en-US"; 
+    utterance.rate = 1; 
+    utterance.pitch = 1; 
 
-    // Try to find a better voice (optional)
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Microsoft Zira"));
     if (preferredVoice) utterance.voice = preferredVoice;
 
-    utterance.onend = () => setSpeaking(false); // Reset icon when done
+    utterance.onend = () => setSpeaking(false); 
 
     setSpeaking(true);
     window.speechSynthesis.speak(utterance);

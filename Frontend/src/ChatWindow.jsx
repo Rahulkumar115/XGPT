@@ -6,7 +6,7 @@ function ChatWindow({ messages, input, setInput, sendMessage, loading, isPro }) 
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [fileType, setFileType] = useState(null); // 'image' or 'pdf'
+  const [fileType, setFileType] = useState(null); 
 
   useEffect(() => {
     if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth" });
@@ -41,8 +41,8 @@ function ChatWindow({ messages, input, setInput, sendMessage, loading, isPro }) 
         {messages.map((msg, index) => (
           <div key={index} id={`msg-${index}`}>
             <Chat message={msg} isPro={isPro} />
-            {msg.image && <div style={{fontSize:"11px", color:"#aaa", marginLeft:"10px"}}>📷 Image Uploaded</div>}
-            {msg.hasPdf && <div style={{fontSize:"11px", color:"#e55", marginLeft:"10px"}}>📄 PDF Uploaded</div>}
+            {msg.image && <div style={{fontSize:"11px", color:"#aaa", marginLeft:"10px"}}> Image Uploaded</div>}
+            {msg.hasPdf && <div style={{fontSize:"11px", color:"#e55", marginLeft:"10px"}}> PDF Uploaded</div>}
           </div>
         ))}
         {loading && <div className="loading-indicator">Thinking...</div>}
@@ -85,7 +85,10 @@ function ChatWindow({ messages, input, setInput, sendMessage, loading, isPro }) 
           />
           <button onClick={handleSendClick}>➤</button>
         </div>
-        <p className="disclaimer">ChatGPT Clone can make mistakes.</p>
+        <div>
+        <p className="disclaimer">XGPT can make mistakes.</p>
+        <p className="disclaimer">Made with ❤️ by Rahul.</p>
+        </div>
       </div>
     </div>
   );

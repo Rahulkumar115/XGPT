@@ -1,7 +1,6 @@
-/* src/Sidebar.css */
 .sidebar {
   width: 260px;
-  background-color: #202123; /* Darker black */
+  background-color: #202123; 
   display: flex;
   flex-direction: column;
   padding: 10px;

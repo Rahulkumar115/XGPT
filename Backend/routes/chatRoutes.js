@@ -7,15 +7,11 @@ import { createRequire } from "module";
 dotenv.config({ path: "./.env" });
 const router = express.Router();
 
-// Use CommonJS pdf-parse from ESM
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");   // make sure this is the NPM package "pdf-parse"
+const pdfParse = require("pdf-parse");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// ==========================================
-// 1. GET ALL THREADS
-// ==========================================
 router.get("/threads/:userId", async (req, res) => {
   try {
     const snapshot = await db
@@ -36,9 +32,6 @@ router.get("/threads/:userId", async (req, res) => {
   }
 });
 
-// ==========================================
-// 2. GET MESSAGES
-// ==========================================
 router.get("/thread/:userId/:threadId", async (req, res) => {
   try {
     const { userId, threadId } = req.params;
@@ -59,12 +52,6 @@ router.get("/thread/:userId/:threadId", async (req, res) => {
   }
 });
 
-// ==========================================
-// 3. SEND MESSAGE (Text + Image + PDF)
-// ==========================================
-// ==========================================
-// ⚡ REPLACEMENT: STREAMING CHAT ROUTE
-// ==========================================
 router.post("/chat", async (req, res) => {
   try {
     const { message, userId, image, pdfData, threadId } = req.body;
@@ -80,10 +67,10 @@ router.post("/chat", async (req, res) => {
       } else {
         const userData = userDoc.data();
         if ((image || pdfData) && userData.plan !== "pro") {
-          return res.status(403).json({ reply: "🔒 Media Analysis is a Pro Feature. Please Upgrade!" });
+          return res.status(403).json({ reply: " Media Analysis is a Pro Feature. Please Upgrade!" });
         }
         if (userData.plan === "free" && userData.messageCount >= 10) {
-          return res.status(403).json({ reply: "🛑 Daily limit reached. Upgrade to Pro!" });
+          return res.status(403).json({ reply: " Daily limit reached. Upgrade to Pro!" });
         }
         await userRef.update({ messageCount: (userData.messageCount || 0) + 1 });
       }
@@ -94,18 +81,17 @@ router.post("/chat", async (req, res) => {
     if (pdfData) {
       try {
         const buffer = Buffer.from(pdfData.split(",")[1], 'base64');
-        // Ensure pdfParse is loaded correctly (using the fix we added earlier)
         if (typeof pdfParse !== 'function' && pdfParse.default) {
              pdfParse = pdfParse.default;
         }
         const pdfOutput = await pdfParse(buffer);
         promptToSend = `Document Content:\n${pdfOutput.text}\n\nUser Question: ${message}`;
       } catch (err) {
-        return res.status(500).json({ reply: "❌ PDF Error" });
+        return res.status(500).json({ reply: " PDF Error" });
       }
     }
 
-    // 3. DATABASE SETUP (Create thread before streaming starts)
+    // 3. DATABASE SETUP
     if (userId && !currentThreadId) {
       const newThreadRef = await db.collection("users").doc(userId).collection("threads").add({
         title: message.substring(0, 30) + "...", 
@@ -114,8 +100,7 @@ router.post("/chat", async (req, res) => {
       currentThreadId = newThreadRef.id;
     }
 
-    // 4. START STREAMING RESPONSE 🌊
-    // Set headers to keep connection open
+    // 4. START STREAMING RESPONSE
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
     res.setHeader("X-Thread-ID", currentThreadId || ""); 
@@ -125,18 +110,17 @@ router.post("/chat", async (req, res) => {
 
     if (image) {
       const imagePart = { inlineData: { data: image.split(",")[1], mimeType: "image/png" } };
-      result = await model.generateContentStream([message, imagePart]); // 👈 STREAM METHOD
+      result = await model.generateContentStream([message, imagePart]); 
     } else {
-      result = await model.generateContentStream(promptToSend); // 👈 STREAM METHOD
+      result = await model.generateContentStream(promptToSend); 
     }
 
     let fullReply = ""; 
 
-    // Loop through chunks and send them immediately
     for await (const chunk of result.stream) {
       const chunkText = chunk.text();
       fullReply += chunkText; 
-      res.write(chunkText); // ⚡ Send to frontend instantly
+      res.write(chunkText); 
     }
 
     res.end(); // Close connection

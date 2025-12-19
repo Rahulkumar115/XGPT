@@ -9,7 +9,7 @@ import {
 import "./Login.css";
 
 function Login({ onLogin }) {
-  const [view, setView] = useState("email"); // 'email' or 'phone'
+  const [view, setView] = useState("email"); 
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
 
@@ -77,8 +77,8 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="login-page"> {/* 🔴 New Wrapper */}
-      <div className="login-card"> {/* 🔴 New Card Class */}
+    <div className="login-page"> {/*  New Wrapper */}
+      <div className="login-card"> {/*  New Card Class */}
         
         <h2>Welcome Back</h2>
 

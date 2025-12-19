@@ -16,7 +16,7 @@ const razorpay = new Razorpay({
 router.post("/create-order", async (req, res) => {
   try {
     const options = {
-      amount: 49900, // ₹499.00 (in paise)
+      amount: 49900,
       currency: "INR",
       receipt: "receipt_" + Date.now(),
     };
@@ -43,7 +43,6 @@ router.post("/verify-payment", async (req, res) => {
       .digest("hex");
 
     if (expectedSignature === razorpay_signature) {
-      // ✅ Payment is Legit! Upgrade the user.
       await db.collection("users").doc(userId).update({
         plan: "pro",
         subscriptionDate: new Date().toISOString()

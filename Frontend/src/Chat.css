@@ -1,60 +1,56 @@
-/* Frontend/src/Chat.css */
-
-/* Main container for a single message block */
 .chat-bubble {
   display: flex;
   gap: 15px;
   padding: 15px;
   border-radius: 15px;
-  max-width: 80%; /* Desktop width */
+  max-width: 80%; 
   animation: fadeIn 0.3s ease-in-out;
   margin-bottom: 15px;
 }
 
-/* User Message Style */
+
 .chat-bubble.user {
   background-color: #343541;
-  align-self: flex-end; /* Align to the right */
-  flex-direction: row-reverse; /* Avatar on the right */
+  align-self: flex-end; 
+  flex-direction: row-reverse; 
 }
 
-/* AI Message Style */
+
 .chat-bubble.assistant {
   background-color: #444654;
-  align-self: flex-start; /* Align to the left */
+  align-self: flex-start; 
 }
 
 /* Avatar Icon */
 .chat-avatar {
   font-size: 24px;
-  flex-shrink: 0; /* Prevent avatar from squishing */
+  flex-shrink: 0; 
   padding-top: 5px;
 }
 
-/* 🔴 KEY FIX: Content Container */
+
 .chat-content {
   display: flex;
-  flex-direction: column; /* 👈 STACK VERTICALLY */
-  gap: 10px; /* Space between image and text */
-  flex-grow: 1; /* Take all available space */
-  min-width: 0; /* Fix for flexbox overflow issue */
+  flex-direction: column; 
+  gap: 10px; 
+  flex-grow: 1; 
+  min-width: 0; 
 }
 
-/* Uploaded Image Style */
 .chat-content img {
-  max-width: 100%; /* Take full width of the bubble */
-  height: auto;    /* Maintain aspect ratio */
+  max-width: 100%; 
+  height: auto;    
   border-radius: 10px;
   object-fit: contain;
-  display: block;  /* Removes extra space below image */
+  display: block;  
 }
 
 /* Message Text Style */
 .chat-content p {
   margin: 0;
   line-height: 1.5;
-  white-space: pre-wrap; /* Preserve line breaks */
-  word-break: break-word; /* Prevent long words from overflowing */
+  white-space: pre-wrap; 
+  word-break: break-word; 
 }
 
 /* Speaker/Voice Icon */
@@ -63,47 +59,41 @@
     margin-top: 5px;
 }
 
-/* Fade-in animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* =========================================
-   📱 MOBILE RESPONSIVENESS
-   ========================================= */
+
 @media (max-width: 768px) {
-  /* 1. Reset Bubble Constraints for Mobile */
   .chat-bubble {
-    max-width: 100% !important; /* 🔴 FORCE FULL WIDTH */
-    width: 100%; /* Make sure it fills the container */
-    border-radius: 10px; /* Slightly smaller radius for mobile */
+    max-width: 100% !important; 
+    width: 100%; 
+    border-radius: 10px; 
     padding: 15px;
     gap: 10px;
     margin-bottom: 10px;
   }
 
-  /* 2. Avatar Adjustment */
   .chat-avatar {
     font-size: 20px;
-    display: none; /* Optional: Hide avatar on mobile to save even more space? (Remove this line if you want to keep avatars) */
+    display: none;
   }
 
-  /* 3. User Message (Keep aligned right, but allow more width) */
   .chat-bubble.user {
     align-self: flex-end;
     background-color: #343541;
-    width: auto; /* Let user bubble shrink to fit content */
-    max-width: 90% !important; /* Keep it slightly smaller than full width to show it's "sent" */
-    margin-left: auto; /* Push to right */
-    border-bottom-right-radius: 2px; /* Visual cue */
+    width: auto; 
+    max-width: 90% !important; 
+    margin-left: auto; 
+    border-bottom-right-radius: 2px; 
   }
 
   /* 4. AI Message (FULL WIDTH as requested) */
   .chat-bubble.assistant {
     align-self: flex-start;
     background-color: #444654;
-    width: 100% !important; /* 🔴 FILL SCREEN */
+    width: 100% !important; 
     max-width: 100% !important;
     margin-right: 0;
     border-bottom-left-radius: 2px;
@@ -112,6 +102,6 @@
   /* 5. Content Layout */
   .chat-content {
       align-items: flex-start;
-      width: 100%; /* Ensure inner text takes full width */
+      width: 100%; 
   }
 }

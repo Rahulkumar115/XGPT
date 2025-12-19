@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, googleProvider, signInWithPopup, signOut, db } from "./firebase";
+import { auth, signOut, db } from "./firebase";
 import Sidebar from "./Sidebar";
 import ChatWindow from "./ChatWindow";
 import Login from "./Login";
@@ -15,19 +15,30 @@ function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   
+  // Thread States
   const [threadList, setThreadList] = useState([]);
   const [currentThreadId, setCurrentThreadId] = useState(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  
-  // ✅ FIXED: Added 'setIsSidebarOpen' setter
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  //  GUEST MODE STATES
+  const [guestMessageCount, setGuestMessageCount] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const GUEST_LIMIT = 3;
+
+  // 1. Listen for Auth Changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        setShowLoginModal(false);
         await fetchUserProfile(currentUser);
         await refreshThreadList(currentUser.uid);
+      } else {
+        setUserData(null);
+        setThreadList([]);
+        setMessages([]); 
+        setGuestMessageCount(0);
       }
       setIsAuthChecking(false);
     });
@@ -54,10 +65,10 @@ function App() {
   };
 
   const loadThread = async (threadId) => {
+    if (!user) return; 
     setCurrentThreadId(threadId);
     setLoading(true);
-    // ✅ Close sidebar on mobile when thread is selected
-    setIsSidebarOpen(false); 
+    setIsSidebarOpen(false);
     try {
       const res = await axios.get(`http://localhost:5000/api/thread/${user.uid}/${threadId}`);
       setMessages(res.data);
@@ -68,8 +79,7 @@ function App() {
   const clearChat = () => {
     setCurrentThreadId(null);
     setMessages([]);
-    // ✅ Close sidebar on new chat
-    setIsSidebarOpen(false); 
+    setIsSidebarOpen(false);
   };
 
   const handleLogout = () => {
@@ -80,12 +90,17 @@ function App() {
     setCurrentThreadId(null);
   };
 
-  // ===================================
-  // ⚡ STREAMING SEND MESSAGE
-  // ===================================
   const sendMessage = async (fileData = {}) => {
     const { image, pdf } = fileData;
     if (!input && !image && !pdf) return;
+
+    if (!user) {
+      if (guestMessageCount >= GUEST_LIMIT) {
+        setShowLoginModal(true); 
+        return;
+      }
+      setGuestMessageCount(prev => prev + 1);
+    }
 
     if (user && userData) {
       if (userData.plan === "free" && userData.messageCount >= 10) {
@@ -113,8 +128,8 @@ function App() {
           message: currentInput || (pdf ? "Analyze this PDF" : "Describe image"),
           image,
           pdfData: pdf,
-          userId: user ? user.uid : null,
-          threadId: currentThreadId
+          userId: user ? user.uid : null, 
+          threadId: user ? currentThreadId : null 
         })
       });
 
@@ -124,7 +139,7 @@ function App() {
       }
 
       const newThreadId = response.headers.get("X-Thread-ID");
-      if (!currentThreadId && newThreadId) {
+      if (user && !currentThreadId && newThreadId) {
         setCurrentThreadId(newThreadId);
         refreshThreadList(user.uid);
       }
@@ -136,26 +151,25 @@ function App() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         const chunkText = decoder.decode(value, { stream: true });
         assistantMessage += chunkText;
 
         setMessages((prev) => {
           const updated = [...prev];
-          const lastMsg = updated[updated.length - 1];
-          lastMsg.content = assistantMessage; 
+          const updatedMsg = { ...updated[updated.length - 1], content: assistantMessage };
+          updated[updated.length - 1] = updatedMsg;
           return updated;
         });
       }
 
-      if (userData) {
+      if (user && userData) {
         setUserData(prev => ({ ...prev, messageCount: (prev.messageCount || 0) + 1 }));
       }
 
     } catch (error) {
       setMessages(prev => {
         const updated = [...prev];
-        updated[updated.length - 1].content = error.message || "⚠️ Error connecting.";
+        updated[updated.length - 1].content = error.message || " Error connecting.";
         return updated;
       });
     }
@@ -164,17 +178,26 @@ function App() {
 
   if (isAuthChecking) return <div style={{ height: "100vh", background: "#343541", color: "white", display: "flex", justifyContent: "center", alignItems: "center" }}>Loading...</div>;
 
-  if (!user) return <Login onLogin={setUser} />;
-
   return (
     <div className="app-layout">
-      {/* 1. Mobile Overlay */}
+      
+      {/* 🛑 LOGIN MODAL (Shows when Guest Limit Reached) */}
+      {showLoginModal && (
+        <div className="login-modal-overlay">
+          <div className="login-modal-content">
+            <button className="close-modal-btn" onClick={() => setShowLoginModal(false)}>✕</button>
+            <Login onLogin={setUser} />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Overlay */}
       <div 
         className={`sidebar-overlay ${isSidebarOpen ? "active" : ""}`}
         onClick={() => setIsSidebarOpen(false)}
       ></div>
 
-      {/* 2. Hamburger Button */}
+      {/* Hamburger Button */}
       <button 
         className="mobile-menu-btn" 
         onClick={() => setIsSidebarOpen(true)}
@@ -182,7 +205,7 @@ function App() {
          ☰
       </button>
 
-      {/* 3. Sidebar with props */}
+      {/* Sidebar */}
       <Sidebar 
         user={user} 
         onLogout={handleLogout} 
@@ -191,8 +214,9 @@ function App() {
         onNewChat={clearChat}
         activeThreadId={currentThreadId}
         isFree={userData?.plan === "free"} 
-        isOpen={isSidebarOpen} // 👈 Pass state
-        closeSidebar={() => setIsSidebarOpen(false)} // 👈 Pass closer
+        isOpen={isSidebarOpen} 
+        closeSidebar={() => setIsSidebarOpen(false)}
+        setShowLoginModal={setShowLoginModal} 
       />
 
       <ChatWindow 
