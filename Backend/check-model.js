@@ -1,31 +1,158 @@
+import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { db } from "../firebase.js";
 import dotenv from "dotenv";
+import { createRequire } from "module";
 
-dotenv.config();
+dotenv.config({ path: "./.env" });
+const router = express.Router();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
-async function listModels() {
+// 🛠️ FIX APPLIED HERE: Added the baseUrl property to route traffic through the global proxy gateway
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
+  baseUrl: "https://generativelanguage.googleapis.com"
+});
+
+router.get("/threads/:userId", async (req, res) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    console.log("Checking API connection...");
-    
-    const result = await model.generateContent("Hello");
-    console.log("Success! The model works. Response:", result.response.text());
-    
-  } catch (error) {
-    console.log("Error detected:");
-    console.log("----------------");
-    console.log(error.message);
-    console.log("----------------");
-    
-    console.log("\nAttempting to list available models for your key...");
-    try {
-        console.log("If this fails, your API Key might be invalid or the API is not enabled.");
-    } catch (e) {
-        console.log("Could not list models.");
-    }
-  }
-}
+    const snapshot = await db
+      .collection("users")
+      .doc(req.params.userId)
+      .collection("threads")
+      .orderBy("createdAt", "desc")
+      .get();
 
-listModels();
+    const threads = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    res.json(threads);
+  } catch (e) {
+    console.error("Threads Error:", e);
+    res.status(500).json({ error: "Failed to fetch threads" });
+  }
+});
+
+router.get("/thread/:userId/:threadId", async (req, res) => {
+  try {
+    const { userId, threadId } = req.params;
+    const snapshot = await db
+      .collection("users")
+      .doc(userId)
+      .collection("threads")
+      .doc(threadId)
+      .collection("messages")
+      .orderBy("timestamp", "asc")
+      .get();
+
+    const messages = snapshot.docs.map((doc) => doc.data());
+    res.json(messages);
+  } catch (e) {
+    console.error("Messages Error:", e);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+router.post("/chat", async (req, res) => {
+  try {
+    const { message, userId, image, pdfData, threadId } = req.body;
+    let currentThreadId = threadId;
+
+    // 1. SUBSCRIPTION & LIMIT CHECK
+    if (userId) {
+      const userRef = db.collection("users").doc(userId);
+      const userDoc = await userRef.get();
+      
+      if (!userDoc.exists) {
+        await userRef.set({ plan: "free", messageCount: 1 }, { merge: true });
+      } else {
+        const userData = userDoc.data();
+        if ((image || pdfData) && userData.plan !== "pro") {
+          return res.status(403).json({ reply: " Media Analysis is a Pro Feature. Please Upgrade!" });
+        }
+        if (userData.plan === "free" && userData.messageCount >= 10) {
+          return res.status(403).json({ reply: " Daily limit reached. Upgrade to Pro!" });
+        }
+        await userRef.update({ messageCount: (userData.messageCount || 0) + 1 });
+      }
+    }
+
+    // 2. PREPARE INPUT (Text/PDF/Image)
+    let promptToSend = message;
+    if (pdfData) {
+      try {
+        const buffer = Buffer.from(pdfData.split(",")[1], 'base64');
+        if (typeof pdfParse !== 'function' && pdfParse.default) {
+             pdfParse = pdfParse.default;
+        }
+        const pdfOutput = await pdfParse(buffer);
+        promptToSend = `Document Content:\n${pdfOutput.text}\n\nUser Question: ${message}`;
+      } catch (err) {
+        return res.status(500).json({ reply: " PDF Error" });
+      }
+    }
+
+    // 3. DATABASE SETUP
+    if (userId && !currentThreadId) {
+      const newThreadRef = await db.collection("users").doc(userId).collection("threads").add({
+        title: message.substring(0, 30) + "...", 
+        createdAt: new Date().toISOString()
+      });
+      currentThreadId = newThreadRef.id;
+    }
+
+    // 4. START STREAMING RESPONSE
+    res.setHeader("Content-Type", "text/plain");
+    res.setHeader("Transfer-Encoding", "chunked");
+    res.setHeader("X-Thread-ID", currentThreadId || ""); 
+
+    // 🛠️ OPTIMIZATION APPLIED HERE: Updated targeting to the standard "gemini-2.5-flash" alias
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    let result;
+
+    if (image) {
+      const imagePart = { inlineData: { data: image.split(",")[1], mimeType: "image/png" } };
+      result = await model.generateContentStream([message, imagePart]); 
+    } else {
+      result = await model.generateContentStream(promptToSend); 
+    }
+
+    let fullReply = ""; 
+
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullReply += chunkText; 
+      res.write(chunkText); 
+    }
+
+    res.end(); // Close connection
+
+    // 5. SAVE FULL CONVERSATION TO DB
+    if (userId) {
+      const messagesRef = db.collection("users").doc(userId)
+        .collection("threads").doc(currentThreadId).collection("messages");
+
+      await messagesRef.add({ 
+        role: "user", 
+        content: message, 
+        image: image || null, 
+        hasPdf: !!pdfData,
+        timestamp: new Date().toISOString() 
+      });
+      
+      await messagesRef.add({ 
+        role: "assistant", 
+        content: fullReply, 
+        timestamp: new Date().toISOString() 
+      });
+    }
+
+  } catch (error) {
+    console.error("Stream Error:", error);
+    if (!res.headersSent) res.status(500).json({ error: "Server Error" });
+  }
+});
+
+export default router;
