@@ -12,7 +12,7 @@ const pdfParse = require("pdf-parse");
 
 // 🛠️ FIX APPLIED HERE: Added the baseUrl property to route traffic through the global proxy gateway
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
-  baseUrl: "https://generativelanguage.googleapis.com"
+  baseUrl: "https://gemini-proxy.brilliantly.ai"
 });
 
 router.get("/threads/:userId", async (req, res) => {
