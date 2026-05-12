@@ -87,7 +87,6 @@ function ChatWindow({ messages, input, setInput, sendMessage, loading, isPro }) 
         </div>
         <div>
         <p className="disclaimer">XGPT can make mistakes.</p>
-        <p className="disclaimer">Made with ❤️ by Rahul.</p>
         </div>
       </div>
     </div>
