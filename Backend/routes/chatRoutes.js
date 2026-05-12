@@ -10,10 +10,7 @@ const router = express.Router();
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
 
-// 🛠️ FIX APPLIED HERE: Added the baseUrl property to route traffic through the global proxy gateway
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
-  baseUrl: "https://gemini-proxy.brilliantly.ai"
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 router.get("/threads/:userId", async (req, res) => {
   try {
@@ -108,7 +105,6 @@ router.post("/chat", async (req, res) => {
     res.setHeader("Transfer-Encoding", "chunked");
     res.setHeader("X-Thread-ID", currentThreadId || ""); 
 
-    // 🛠️ OPTIMIZATION APPLIED HERE: Updated targeting to the standard "gemini-2.5-flash" alias
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     let result;
 
